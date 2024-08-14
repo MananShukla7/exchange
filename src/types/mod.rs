@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateOrderMessage {
@@ -39,7 +39,7 @@ pub enum Side {
     Sell,
 }
 
-#[derive(Debug,Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum MessageToEngine {
     CreateOrder(CreateOrderMessage),
     CancelOrder(CancelOrderMessage),

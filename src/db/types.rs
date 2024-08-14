@@ -1,11 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DbMessage {
     TradeAdded(TradeAdd),
-    OrderUpdate(OrderUpdate)
+    OrderUpdate(OrderUpdate),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

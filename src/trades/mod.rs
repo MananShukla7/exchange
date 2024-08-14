@@ -1,5 +1,5 @@
 use axum::Router;
 
-pub fn tradesRouter()->Router{
+pub fn tradesRouter() -> Router {
     Router::new()
 }
