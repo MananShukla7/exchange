@@ -1,7 +1,8 @@
 mod depth_service;
-use axum::{routing::get, Router};
-use depth_service::trial;
+mod depth_types;
+use axum::{routing::{get, post}, Router};
+use depth_service::depth_service;
 
 pub fn depthRouter()->Router{
-    Router::new().route("/", get(trial))
+    Router::new().route("/", get(depth_service))
 }

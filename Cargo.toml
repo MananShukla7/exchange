@@ -4,15 +4,9 @@ name = "cryochange-backend"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "db"
-path = "src/db/mod.rs"
-
-
-
-
 [dependencies]
 axum = "0.7.5"
+chrono = "0.4.38"
 dotenvy = "0.15.7"
 lazy_static = "1.5.0"
 once_cell = "1.19.0"

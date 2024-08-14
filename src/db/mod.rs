@@ -1,10 +1,15 @@
 pub mod cron;
+pub mod types;
 
-use std::{env, time::Duration};
+use std::env;
+use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use cron::cron_job;
-use sea_orm::{Database, DatabaseConnection};
+use redis::Commands;
+use sea_orm::{Database, DatabaseConnection, Set};
 use once_cell::sync::OnceCell;
-use tokio::time::Interval;
+use types::DbMessage;
+use crate::{common_struct::RedisManager, database::tata_prices};
+use sea_orm::ActiveModelTrait;
 // pub static DB_INITIALIZED: OnceCell<tokio::sync::Mutex<bool>> = OnceCell::new();
 pub static DB_CONN: OnceCell<DatabaseConnection> = OnceCell::new();
 pub async fn get_db_connection()->& 'static DatabaseConnection{
@@ -21,19 +26,47 @@ pub async fn get_db_connection()->& 'static DatabaseConnection{
     }
 }
 
+
 pub async fn refresh_view(){
     let cron_job_status=tokio::task::spawn(cron_job());
-    // // println!("{:?}",cron_job_status);
-    // if let Err(error) =  cron_job_status{
-    //     println!("Error: {}", error.to_string());
-    // }
-    // else {
-    //     println!("All of the materialized view refreshed");
-    // }
     cron_job_status.await;
 }
 
-#[tokio::main]
-pub async fn main(){
-    refresh_view().await;
+pub async fn trade_adder(){
+    let redis_manager=RedisManager::get_instance().await;
+    
+    let response: Result<String, redis::RedisError>=redis_manager.lock().unwrap().client.rpop("db_processor",None);
+    let response=serde_json::from_str(&response.unwrap());
+    if response.is_ok(){
+        let data=response.unwrap();
+        match data {
+            DbMessage::TradeAdded(data) => {
+                println!("Adding the recent trade data to db");
+                println!("{:?}", data);
+                let price = data.price.to_owned();
+                let timestamp = data.timestamp;
+    
+                // Convert timestamp to DateTime<FixedOffset>
+                let datetime: DateTime<FixedOffset> = Utc.timestamp_millis_opt(timestamp)
+                    .unwrap()
+                    .with_timezone(&FixedOffset::east_opt(0).unwrap());
+    
+                let db_client = get_db_connection().await;
+                let tata_price = tata_prices::ActiveModel {
+                    time: Set(datetime),
+                    price: Set(Some(price.parse::<f64>().unwrap())),
+                    ..Default::default()
+                };
+
+                let res=tata_price.save(db_client).await.unwrap();
+                dbg!(res);
+                // let res=
+                // println!("{:?}", res);
+            }
+            DbMessage::OrderUpdate(data)=>{
+                println!("Adding the recent order data to db")
+        }
+    }
+    
+}
 }

@@ -5,6 +5,7 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "tata_prices")]
 pub struct Model {
+    #[sea_orm(primary_key, auto_increment = false)]
     pub time: DateTimeWithTimeZone,
     #[sea_orm(column_type = "Double", nullable)]
     pub price: Option<f64>,

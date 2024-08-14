@@ -1,18 +1,23 @@
+use common_struct::RedisManager;
 use db::{cron::cron_job, get_db_connection};
 // use db::{cron::cron_job, get_db_connection};
 use routes::get_all_routers;
 use tokio::{net::TcpListener, task};
 // use redis::Commands;
 use dotenvy::dotenv;
-mod depth;
-mod order_book;
-mod routes;
-mod trades;
-mod ticker;
-mod klines;
-mod db;
-mod types;
-mod common_struct;
+pub mod depth;
+pub mod order_book;
+pub mod routes;
+pub mod trades;
+pub mod ticker;
+pub mod klines;
+pub mod db;
+pub mod types;
+pub mod common_struct;
+pub mod database;
+
+
+
 #[tokio::main]
 async fn main() {
 
@@ -22,6 +27,7 @@ async fn main() {
     task::spawn(cron_job());
     let listener=TcpListener::bind("127.0.0.1:8080").await.unwrap();
     let _app=axum::serve(listener, get_all_routers()).await.unwrap();
+
 
 }
 
