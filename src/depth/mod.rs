@@ -1,5 +1,5 @@
-mod depth_service;
-mod depth_types;
+pub mod depth_service;
+pub mod depth_types;
 use axum::{
     routing::{get, post},
     Router,

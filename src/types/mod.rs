@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+use crate::db::types::Side;
+
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateOrderMessage {
     pub market: String,
@@ -33,11 +36,11 @@ pub struct GetOpenOrdersMessage {
     pub market: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub enum Side {
-    Buy,
-    Sell,
-}
+// #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+// pub enum Side {
+//     Buy,
+//     Sell,
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum MessageToEngine {

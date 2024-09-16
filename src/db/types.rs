@@ -1,14 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub enum DbMessage {
     TradeAdded(TradeAdd),
     OrderUpdate(OrderUpdate),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct TradeAdd {
-    pub message_type: String,
     pub id: String,
     pub is_buyer_maker: bool,
     pub price: String,
@@ -18,7 +17,7 @@ pub struct TradeAdd {
     pub market: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct OrderUpdate {
     pub order_id: String,
     pub executed_qty: i64,
@@ -28,7 +27,7 @@ pub struct OrderUpdate {
     pub side: Option<Side>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub enum Side {
     Buy,
     Sell,

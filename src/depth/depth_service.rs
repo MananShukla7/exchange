@@ -1,5 +1,4 @@
 use axum::{
-    debug_handler,
     extract::Query,
     http::StatusCode,
     response::{IntoResponse, Json},
@@ -20,9 +19,11 @@ pub struct DepthQuery {
 struct ResponseMessage<T> {
     message: String,
     data: T,
+
 }
 
-pub async fn depth_service(Query(params): Query<DepthQuery>) -> impl IntoResponse {
+pub async fn depth_service(Query(params): Query<DepthQuery>) -> impl IntoResponse { 
+    // println!("depth_service called");
     // let mut redis_connection = match RedisManager::get_instance().await.lock().await.unwrap() {
     //     Ok(conn) => conn,
     //     Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ResponseMessage {
@@ -31,13 +32,16 @@ pub async fn depth_service(Query(params): Query<DepthQuery>) -> impl IntoRespons
     //     })).into_response(),
     // };
 
-    let mut redis_connection = RedisManager::get_instance().await.lock().await;
+    let mutex_guard = RedisManager::get_instance().await.lock().await;
+    let mutex_guard = mutex_guard;
+    let mut redis_connection: tokio::sync::MutexGuard<'_, RedisManager> = mutex_guard;
+    
 
     let depth = GetDepthMessage {
         market: params.symbol,
     };
     match redis_connection
-        .send_and_await(MessageToEngine::GetDepth(depth))
+        .send_and_await(MessageToEngine::GetDepth(depth),None)
         .await
     {
         Ok(data) => (

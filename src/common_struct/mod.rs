@@ -2,7 +2,7 @@ use tokio::sync::Mutex;
 
 use once_cell::sync::OnceCell;
 use rand::Rng;
-use redis::{aio::PubSub, Client, Commands, Connection, ConnectionLike};
+use redis::{aio::{MultiplexedConnection, PubSub}, AsyncCommands, Client, Commands, Connection, ConnectionLike};
 use serde::{Deserialize, Serialize};
 
 use crate::types::MessageToEngine;
@@ -22,19 +22,19 @@ pub struct MessageFromOrderbook {
 
 pub struct RedisManager {
     pub client: Client,
-    pub publisher: Connection,
-    pub subscriber: PubSub,
+    pub publisher: MultiplexedConnection,
+    // pub subscriber: PubSub,
 }
 
 impl RedisManager {
     pub async fn new() -> redis::RedisResult<Self> {
         let client = Client::open("redis://127.0.0.1/")?;
-        let publisher = client.get_connection()?;
-        let subscriber = client.get_async_pubsub().await?;
+        let publisher = client.get_multiplexed_async_connection().await?;
+        // let subscriber = client.get_async_pubsub().await?;
         Ok(RedisManager {
             client,
             publisher,
-            subscriber,
+            // subscriber,
         })
     }
 
@@ -47,7 +47,13 @@ impl RedisManager {
         }
     }
 
-    pub async fn send_and_await(&mut self, message: MessageToEngine) -> redis::RedisResult<String> {
+    pub async fn send_and_await(&mut self, message: MessageToEngine,mut retry:Option<i32>) -> redis::RedisResult<String> {
+        if retry.is_none(){
+            retry=Some(1);
+        }
+        else {
+            retry=Some(retry.unwrap()+1);
+        }
         println!("connection to the redis is active");
         let id = get_random_client_id();
         println!("Sending message: {:?}", id);
@@ -59,7 +65,7 @@ impl RedisManager {
                 "message": message
             });
             // Push the message using the main connection
-            self.publisher.lpush("messages", msg_with_id.to_string())?;
+            self.publisher.lpush("messages", msg_with_id.to_string()).await?;
 
             // Parse and return the response
             // let response: MessageFromOrderbook = serde_json::from_str(&payload).unwrap();
@@ -67,13 +73,19 @@ impl RedisManager {
             println!("Response: {:?}", msg_with_id.to_string());
             Ok(response)
         } else {
+            if retry.unwrap()>=5{
+                return Ok("Can't connect to redis after retries".to_string().into());
+            }
             // Ok("Can't connect to redis".to_string())
-            if let Err(error) = Box::pin(self.send_and_await(message)).await {
+            if let Err(error) = Box::pin(self.send_and_await(message,retry)).await {
                 return Err(error);
             } else {
                 return Ok("Retrying...".to_string());
             }
         }
+    }
+    pub fn trial(&mut self, message: MessageToEngine,mut retry:Option<i32>){
+
     }
 }
 
