@@ -38,11 +38,11 @@ pub async fn main(){
         // set_ws_stream(ws_stream).await;
         
     
-        let (mut write,mut read)=ws_stream.split();
+        let (mut write,read)=ws_stream.split();
         register_name(&mut write, "RustClient".to_string()).await;
         let read_handle=tokio::task::spawn(handle_incoming_messages(read));
         let write_handle=tokio::task::spawn(read_and_send_messages(write));
-        tokio::join!(read_handle,write_handle);
+        let res=tokio::join!(read_handle,write_handle);
     
     }
 

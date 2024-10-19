@@ -1,8 +1,12 @@
+use async_recursion::async_recursion;
 use tokio::sync::Mutex;
 
 use once_cell::sync::OnceCell;
 use rand::Rng;
-use redis::{aio::{MultiplexedConnection, PubSub}, AsyncCommands, Client, Commands, Connection, ConnectionLike};
+use redis::{
+    aio::{MultiplexedConnection, PubSub},
+    AsyncCommands, Client, Commands, Connection, ConnectionLike,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::types::MessageToEngine;
@@ -47,12 +51,16 @@ impl RedisManager {
         }
     }
 
-    pub async fn send_and_await(&mut self, message: MessageToEngine,mut retry:Option<i32>) -> redis::RedisResult<String> {
-        if retry.is_none(){
-            retry=Some(1);
-        }
-        else {
-            retry=Some(retry.unwrap()+1);
+    #[async_recursion]
+    pub async fn send_and_await(
+        &mut self,
+        message: MessageToEngine,
+        mut retry: Option<i32>,
+    ) -> redis::RedisResult<String> {
+        if retry.is_none() {
+            retry = Some(1);
+        } else {
+            retry = Some(retry.unwrap() + 1);
         }
         println!("connection to the redis is active");
         let id = get_random_client_id();
@@ -65,7 +73,9 @@ impl RedisManager {
                 "message": message
             });
             // Push the message using the main connection
-            self.publisher.lpush("messages", msg_with_id.to_string()).await?;
+            self.publisher
+                .lpush("messages", msg_with_id.to_string())
+                .await?;
 
             // Parse and return the response
             // let response: MessageFromOrderbook = serde_json::from_str(&payload).unwrap();
@@ -73,20 +83,18 @@ impl RedisManager {
             println!("Response: {:?}", msg_with_id.to_string());
             Ok(response)
         } else {
-            if retry.unwrap()>=5{
+            if retry.unwrap() >= 5 {
                 return Ok("Can't connect to redis after retries".to_string().into());
             }
             // Ok("Can't connect to redis".to_string())
-            if let Err(error) = Box::pin(self.send_and_await(message,retry)).await {
+            if let Err(error) = self.send_and_await(message, retry).await {
                 return Err(error);
             } else {
                 return Ok("Retrying...".to_string());
             }
         }
     }
-    pub fn trial(&mut self, message: MessageToEngine,mut retry:Option<i32>){
-
-    }
+    pub fn trial(&mut self, message: MessageToEngine, mut retry: Option<i32>) {}
 }
 
 fn get_random_client_id() -> String {
